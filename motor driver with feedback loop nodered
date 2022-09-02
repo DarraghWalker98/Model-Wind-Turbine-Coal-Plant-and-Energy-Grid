@@ -1,0 +1,74 @@
+#define COALPLANT 5
+#define TURBINE 6
+#define LOAD 8
+int windSpeed = 180;
+float coalInput = 180;
+int i = 0;
+const int frequencyGoal = 50;
+long lastPrint = 0;
+void setup() {
+  Serial.begin(9600);
+  pinMode(LOAD, OUTPUT);
+  pinMode(COALPLANT, OUTPUT);
+  pinMode(TURBINE, OUTPUT);
+  digitalWrite(LOAD, LOW);
+  analogWrite(COALPLANT, 255);
+  analogWrite(TURBINE, windSpeed);
+}
+
+void loop() {
+  int frequency = 0;
+  int frequencyTotal = 0;
+  for(int i = 0; i < 10; i++){
+    frequencyTotal = frequencyTotal + analogRead(A0);
+    delay(1); 
+  }
+  //When system is running 250 is got from analog input this is divided by 5 to get approx 50Hz
+  frequency = (frequencyTotal/10) / 5;
+  
+  if(frequency < frequencyGoal){
+    if(coalInput < 255){
+        coalInput += .5;
+    }
+    else{
+      coalInput = 255;
+    }
+  }
+  else if (frequency > frequencyGoal){
+    if(coalInput > 130){
+        coalInput -= .5;
+    }
+    else{
+      coalInput = 130;
+    }
+  }
+  if (Serial.available() > 0) {
+    int temp = Serial.parseInt();
+    if(temp > 1000 && temp < 1255){
+      windSpeed = temp - 1000;
+      digitalWrite(LOAD, HIGH);
+    }
+    else if (temp > 180 && temp < 255){
+      windSpeed = temp;
+      digitalWrite(LOAD, LOW); 
+    }
+    else if(temp == 3000){
+      digitalWrite(coalInput, LOW);
+      digitalWrite(windSpeed, LOW);
+    }
+    else;
+    delay(1);
+  }
+  if((millis() - lastPrint) > 1000){
+  lastPrint = millis();
+  Serial.print(frequency);
+  Serial.print(",");
+  Serial.print(coalInput * 10);
+  Serial.print(",");
+  Serial.println((windSpeed-180)*9);
+  }
+  analogWrite(TURBINE, windSpeed);
+  analogWrite(COALPLANT, coalInput);
+  delay(20);
+  
+}
